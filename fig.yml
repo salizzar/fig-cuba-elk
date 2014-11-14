@@ -1,0 +1,42 @@
+elasticsearch:
+  image: 'salizzar/centos-7-elasticsearch'
+  ports:
+    - 9200:9200
+    - 9300:9300
+
+logstash:
+  image: 'salizzar/centos-7-logstash'
+  command: -f /etc/logstash/conf.d/logstash.conf
+  ports:
+    - 5000:5000
+  volumes:
+    - logstash:/etc/logstash/conf.d
+  links:
+    - elasticsearch
+
+forwarder:
+  image: 'salizzar/centos-7-logstash-forwarder'
+  command: -config /etc/logstash/conf.d/forwarder.conf
+  volumes:
+    - logstash:/etc/logstash/conf.d
+    - log:/var/www/fig-elk/log
+  links:
+    - elasticsearch
+    - logstash
+    - web
+
+kibana:
+  image: 'salizzar/centos-7-kibana'
+  ports:
+    - 8080:80
+  links:
+    - elasticsearch
+
+web:
+  build: .
+  volumes:
+    - .:/var/www/fig-elk
+  ports:
+    - 3000:3000
+  links:
+    - logstash
